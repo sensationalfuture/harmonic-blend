@@ -15,36 +15,8 @@ export interface BackendYoutubeResult extends YoutubeResult {
   source?: string;
 }
 
-const FEATURED_RESULTS: BackendYoutubeResult[] = [
-  {
-    id: 'yt-travis-highest',
-    title: 'Travis Scott - HIGHEST IN THE ROOM',
-    channelTitle: 'Travis Scott (YouTube Music)',
-    duration: '02:56',
-    thumbnailUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3d/8e/31/3d8e310d-2b4a-4e2b-87cf-45b0d0a5cfd1/886447970725.jpg/300x300bb.jpg',
-    previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/44/1a/df/441adf92-23f4-3d96-78b1-3ef5b525db2a/mzaf_10526019561280387532.plus.aac.p.m4a',
-    youtubeId: '3d8e310d',
-    source: 'ytmusicapi'
-  },
-  {
-    id: 'yt-weeknd-blinding',
-    title: 'The Weeknd - Blinding Lights',
-    channelTitle: 'The Weeknd',
-    duration: '03:20',
-    thumbnailUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/05/27/15/0527150c-e2f4-8a45-6a56-4c74033dfd59/20UMGIM03260.rgb.jpg/300x300bb.jpg',
-    previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/80/f3/9d/80f39d89-c454-e692-0b1e-64f4ecf3c4db/mzaf_11504998782352818165.plus.aac.p.m4a',
-    source: 'ytmusicapi'
-  },
-  {
-    id: 'yt-drake-gods-plan',
-    title: "Drake - God's Plan",
-    channelTitle: 'Drake',
-    duration: '03:18',
-    thumbnailUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/21/be/3e/21be3e44-d88a-eb27-d079-c5c8ff3f8ebf/18UMGIM01323.rgb.jpg/300x300bb.jpg',
-    previewUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/10/8d/f3/108df3c9-f1fb-2e55-e45a-8b1b0cb53f5f/mzaf_17294432135118742618.plus.aac.p.m4a',
-    source: 'ytmusicapi'
-  },
-];
+// Featured results are populated on first search — no hardcoded IDs to avoid stale/invalid video IDs
+const FEATURED_RESULTS: BackendYoutubeResult[] = [];
 
 export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'youtube' | 'preset' | 'upload'>('youtube');
@@ -53,6 +25,7 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
   const [isSearching, setIsSearching] = useState(false);
   const [loadingDeck, setLoadingDeck] = useState<string | null>(null);
   const [loadedMsg, setLoadedMsg] = useState<string | null>(null);
+  const [loadStatus, setLoadStatus] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -127,22 +100,22 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
   const loadYoutubeToDeck = async (yt: BackendYoutubeResult, deckId: 'A' | 'B') => {
     setLoadingDeck(`${deckId}-${yt.id}`);
 
-    // If we have YouTube ID or preview URL, construct backend stream URL or preview URL
     const streamUrl = yt.youtubeId
       ? `http://127.0.0.1:5000/api/audio?id=${yt.youtubeId}`
-      : yt.previewUrl || 'synthetic-youtube';
+      : yt.previewUrl || '';
 
-    const isTravis = yt.title.toLowerCase().includes('travis') || yt.title.toLowerCase().includes('highest');
+    if (!streamUrl) {
+      setLoadingDeck(null);
+      return;
+    }
 
     const track: TrackMetaData = {
       id: `yt-${yt.id}`,
       title: yt.title,
       artist: yt.channelTitle || 'YouTube Music',
       duration: 180,
-      bpm: isTravis ? 152 : 124,
-      key: isTravis
-        ? { keyName: 'C Minor', camelot: '5A', pitchClass: 0, isMinor: true }
-        : { keyName: 'A Minor', camelot: '8A', pitchClass: 9, isMinor: true },
+      bpm: 120,
+      key: { keyName: 'A Minor', camelot: '8A', pitchClass: 9, isMinor: true },
       thumbnailUrl: yt.thumbnailUrl,
       audioUrl: streamUrl,
       isYoutube: true,
@@ -150,9 +123,13 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
       stemsAvailable: true,
     };
 
-    await audioEngine.loadTrack(deckId, track);
+    // Close modal immediately — the deck loading overlay handles the rest
+    onClose();
     setLoadingDeck(null);
-    showSuccessMsg(`Extracted audio via yt-dlp onto Deck ${deckId}`);
+    setLoadStatus(null);
+
+    // Load runs in background — UI reflects via audioEngine state
+    audioEngine.loadTrack(deckId, track);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, deckId: 'A' | 'B') => {
@@ -214,6 +191,14 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
           <div className="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-bold flex items-center gap-2">
             <Check className="w-4 h-4 text-emerald-400" />
             <span>{loadedMsg}</span>
+          </div>
+        )}
+
+        {/* Download Status Toast */}
+        {loadStatus && (
+          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-bold flex items-center gap-2 animate-pulse">
+            <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+            <span>{loadStatus}</span>
           </div>
         )}
 
@@ -279,6 +264,16 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
             </form>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {results.length === 0 && !isSearching && (
+                <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+                  <Search className="w-10 h-10 text-slate-700" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-400 m-0">Search YouTube Music</p>
+                    <p className="text-xs text-slate-600 mt-1">Type a song or artist above and press <span className="text-red-400 font-mono">YT MUSIC SEARCH</span></p>
+                    <p className="text-xs text-slate-700 mt-2">Powered by yt-dlp + ytmusicapi — real tracks, full quality</p>
+                  </div>
+                </div>
+              )}
               {results.map((yt) => (
                 <div
                   key={yt.id}

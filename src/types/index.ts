@@ -33,6 +33,12 @@ export interface DeckState {
   vocalBuffer: AudioBuffer | null;
   instBuffer: AudioBuffer | null;
   isPlaying: boolean;
+
+  // Loading state
+  isLoading: boolean;
+  loadingStep: string;
+  stemSeparating: boolean; // Demucs ML separation in progress
+
   currentTime: number;
   duration: number;
   volume: number; // 0 to 1

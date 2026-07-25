@@ -6,7 +6,6 @@ import { WaveformCanvas } from './components/WaveformCanvas';
 import { YoutubeSearchModal } from './components/YoutubeSearchModal';
 import { ExportModal } from './components/ExportModal';
 import { audioEngine } from './audio/AudioEngine';
-import { PRESET_TRACKS } from './audio/PresetTracks';
 import { Activity, Disc, Sparkles } from 'lucide-react';
 
 export function App() {
@@ -25,17 +24,6 @@ export function App() {
       setMixer({ ...audioEngine.mixer });
     });
 
-    // Auto-load default pro studio preset tracks into Deck A & Deck B
-    const loadDefaultTracks = async () => {
-      if (!audioEngine.deckA.track) {
-        await audioEngine.loadTrack('A', PRESET_TRACKS[0]);
-      }
-      if (!audioEngine.deckB.track) {
-        await audioEngine.loadTrack('B', PRESET_TRACKS[1]);
-      }
-    };
-    loadDefaultTracks();
-
     return () => unsubscribe();
   }, []);
 
@@ -52,8 +40,8 @@ export function App() {
       <main className="max-w-7xl w-full mx-auto px-4 py-6 flex-1 flex flex-col gap-6">
         {/* Split Screen Dual Decks (Deck A & Deck B) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <Deck deck={deckA} />
-          <Deck deck={deckB} />
+        <Deck deck={deckA} onOpenSearch={() => setIsSearchOpen(true)} />
+          <Deck deck={deckB} onOpenSearch={() => setIsSearchOpen(true)} />
         </div>
 
         {/* Central Master Mixing Rack */}
