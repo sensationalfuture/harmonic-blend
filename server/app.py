@@ -132,11 +132,13 @@ def analyze_audio(audio_path: str) -> dict:
     }
 
 
-def download_audio(video_id: str, output_path: str, fmt: str = 'bestaudio[ext=m4a]/bestaudio/best') -> str:
-    """Download audio via yt-dlp to output_path. Returns actual output file path."""
+def download_audio(video_id: str, output_dir: str, fmt: str = 'bestaudio[ext=m4a]/bestaudio[ext=mp4]/bestaudio/best') -> str:
+    """Download audio via yt-dlp into output_dir. Returns path to the downloaded file."""
+    # Use a fixed base name — yt-dlp will add the right extension
+    base_path = os.path.join(output_dir, 'audio')
     ydl_opts = {
         'format': fmt,
-        'outtmpl': output_path,
+        'outtmpl': base_path + '.%(ext)s',
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
@@ -144,22 +146,16 @@ def download_audio(video_id: str, output_path: str, fmt: str = 'bestaudio[ext=m4
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
-    
-    # yt-dlp may add extension; find actual output file
-    for ext in ['.m4a', '.mp4', '.webm', '.opus', '.ogg', '.mp3']:
-        candidate = output_path + ext if not output_path.endswith(ext) else output_path
-        if os.path.exists(candidate) and os.path.getsize(candidate) > 0:
-            return candidate
-        # Also try without the base extension
-        base = os.path.splitext(output_path)[0]
-        candidate2 = base + ext
-        if os.path.exists(candidate2) and os.path.getsize(candidate2) > 0:
-            return candidate2
-    
-    # Fallback: return original if exists
-    if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-        return output_path
-    raise FileNotFoundError(f"Could not find downloaded audio for {video_id}")
+
+    # Find whatever file yt-dlp created
+    audio_exts = {'.m4a', '.mp4', '.webm', '.opus', '.ogg', '.mp3', '.aac', '.wav'}
+    for fname in os.listdir(output_dir):
+        if os.path.splitext(fname)[1].lower() in audio_exts:
+            full_path = os.path.join(output_dir, fname)
+            if os.path.getsize(full_path) > 0:
+                return full_path
+
+    raise FileNotFoundError(f"No audio file found after download for {video_id} in {output_dir}")
 
 
 # --- ROUTES ---
@@ -259,12 +255,10 @@ def get_audio():
     if not video_id or len(video_id) < 5:
         return jsonify({"error": f"Invalid video ID: '{video_id}'"}), 400
 
-    tmp = tempfile.NamedTemporaryFile(suffix='.m4a', delete=False)
-    tmp_path = tmp.name
-    tmp.close()
+    tmp_dir = tempfile.mkdtemp()
 
     try:
-        actual_path = download_audio(video_id, tmp_path)
+        actual_path = download_audio(video_id, tmp_dir)
 
         ext = os.path.splitext(actual_path)[1].lower()
         mime_map = {'.m4a': 'audio/mp4', '.mp4': 'audio/mp4', '.webm': 'audio/webm',
@@ -272,6 +266,7 @@ def get_audio():
                     '.mp3': 'audio/mpeg', '.aac': 'audio/aac'}
         mime_type = mime_map.get(ext, 'audio/mp4')
         file_size = os.path.getsize(actual_path)
+        print(f"✅ Serving audio for {video_id}: {os.path.basename(actual_path)} ({file_size/1024/1024:.1f} MB)")
 
         def generate_and_cleanup():
             try:
@@ -283,9 +278,8 @@ def get_audio():
                         yield chunk
             finally:
                 try:
-                    os.unlink(actual_path)
-                    if actual_path != tmp_path and os.path.exists(tmp_path):
-                        os.unlink(tmp_path)
+                    import shutil
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
                 except Exception:
                     pass
 
@@ -298,11 +292,8 @@ def get_audio():
 
     except Exception as e:
         print(f"Audio extraction error for {video_id}: {e}")
-        for f in [tmp_path]:
-            try:
-                if os.path.exists(f): os.unlink(f)
-            except Exception:
-                pass
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -316,12 +307,10 @@ def analyze_track():
     if not video_id or len(video_id) < 5:
         return jsonify({"error": "Invalid video ID"}), 400
 
-    tmp = tempfile.NamedTemporaryFile(suffix='.m4a', delete=False)
-    tmp_path = tmp.name
-    tmp.close()
+    tmp_dir = tempfile.mkdtemp()
 
     try:
-        actual_path = download_audio(video_id, tmp_path)
+        actual_path = download_audio(video_id, tmp_dir)
         analysis = analyze_audio(actual_path)
         print(f"✅ Analyzed {video_id}: {analysis['bpm']} BPM, {analysis['keyName']} ({analysis['camelot']})")
         return jsonify(analysis)
@@ -331,11 +320,8 @@ def analyze_track():
         return jsonify({"error": str(e)}), 500
 
     finally:
-        for f in [tmp_path]:
-            try:
-                if os.path.exists(f): os.unlink(f)
-            except Exception:
-                pass
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @app.route('/api/stem', methods=['GET', 'OPTIONS'])
@@ -360,16 +346,12 @@ def get_stem():
     if stem_type not in ('vocals', 'instrumental'):
         return jsonify({"error": "stem must be 'vocals' or 'instrumental'"}), 400
 
-    # Download audio to temp file
-    tmp = tempfile.NamedTemporaryFile(suffix='.m4a', delete=False)
-    tmp_path = tmp.name
-    tmp.close()
-
+    # Use a single tmp_dir for both download and stems output
     tmp_dir = tempfile.mkdtemp()
 
     try:
         print(f"⏬ Downloading {video_id} for stem separation...")
-        actual_path = download_audio(video_id, tmp_path)
+        actual_path = download_audio(video_id, tmp_dir)
         print(f"✅ Downloaded: {actual_path}")
 
         if _demucs_available:
