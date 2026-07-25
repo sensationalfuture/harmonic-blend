@@ -91,38 +91,62 @@ def analyze_audio(audio_path: str) -> dict:
     # --- BPM Detection ---
     tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
     bpm = float(np.round(tempo[0] if hasattr(tempo, '__len__') else tempo, 1))
-    # Clamp to reasonable DJ range
-    while bpm < 60:  bpm *= 2
-    while bpm > 200: bpm /= 2
+    # Clamp to reasonable DJ range (70 - 175 BPM)
+    while bpm < 70:  bpm *= 2
+    while bpm > 175: bpm /= 2
 
-    # --- Key Detection via Chromagram + Krumhansl-Schmuckler ---
-    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
-    chroma_mean = np.mean(chroma, axis=1)  # shape (12,)
-    
-    best_score = -np.inf
-    best_key_str = 'A minor'
-    
-    note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    for i, note in enumerate(note_names):
-        # Rotate chroma to match key root
-        rotated = np.roll(chroma_mean, -i)
+    # --- Key Detection via Harmonic Chromagram + Krumhansl-Schmuckler ---
+    try:
+        # Separate harmonic components to remove drum transients
+        y_harm = librosa.effects.harmonic(y)
         
-        # Normalize
-        rotated = rotated / (np.linalg.norm(rotated) + 1e-8)
-        major_n = MAJOR_PROFILE / (np.linalg.norm(MAJOR_PROFILE) + 1e-8)
-        minor_n = MINOR_PROFILE / (np.linalg.norm(MINOR_PROFILE) + 1e-8)
+        # Estimate tuning offset in cents
+        tuning = librosa.estimate_tuning(y=y_harm, sr=sr)
         
-        major_score = np.dot(rotated, major_n)
-        minor_score = np.dot(rotated, minor_n)
+        # Compute Chroma CENS (Chroma Energy Normalized Statistics)
+        chroma = librosa.feature.chroma_cens(y=y_harm, sr=sr, tuning=tuning)
+        chroma_mean = np.mean(chroma, axis=1)  # shape (12,)
         
-        if major_score > best_score:
-            best_score = major_score
-            best_key_str = f'{note} major'
-        if minor_score > best_score:
-            best_score = minor_score
-            best_key_str = f'{note} minor'
-    
-    key_info = CAMELOT_MAP.get(best_key_str, CAMELOT_MAP['A minor'])
+        # Normalize chroma_mean (zero mean, unit variance) for Pearson correlation
+        chroma_norm = chroma_mean - np.mean(chroma_mean)
+        chroma_norm = chroma_norm / (np.std(chroma_norm) + 1e-8)
+        
+        maj_profile_norm = MAJOR_PROFILE - np.mean(MAJOR_PROFILE)
+        maj_profile_norm = maj_profile_norm / (np.std(maj_profile_norm) + 1e-8)
+        
+        min_profile_norm = MINOR_PROFILE - np.mean(MINOR_PROFILE)
+        min_profile_norm = min_profile_norm / (np.std(min_profile_norm) + 1e-8)
+        
+        best_score = -np.inf
+        best_key_str = 'C Major'
+        
+        note_names = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+        for i, note in enumerate(note_names):
+            # Shift chromagram so pitch class i is at index 0
+            rotated = np.roll(chroma_norm, -i)
+            
+            major_score = float(np.dot(rotated, maj_profile_norm))
+            minor_score = float(np.dot(rotated, min_profile_norm))
+            
+            if major_score > best_score:
+                best_score = major_score
+                best_key_str = f'{note} major'
+            if minor_score > best_score:
+                best_score = minor_score
+                best_key_str = f'{note} minor'
+        
+        # Match case-insensitively in CAMELOT_MAP
+        matched_key = None
+        for k_name, k_data in CAMELOT_MAP.items():
+            if k_name.lower() == best_key_str.lower():
+                matched_key = k_data
+                break
+        
+        key_info = matched_key or CAMELOT_MAP.get('A minor') or CAMELOT_MAP.get('C major')
+    except Exception as e:
+        print(f"Key detection error: {e}")
+        key_info = CAMELOT_MAP['C major']
+        
     return {
         'bpm': bpm,
         'keyName': key_info['keyName'],

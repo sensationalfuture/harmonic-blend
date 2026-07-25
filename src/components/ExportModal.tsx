@@ -31,7 +31,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, deckA
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#00f2fe', '#ff007f', '#38bdf8', '#c084fc'],
+        colors: ['#d4a373', '#b07d62', '#7f5539', '#e6ccb2'],
       });
     } catch (e) {
       console.error('WAV export error:', e);
@@ -40,36 +40,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, deckA
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md glass-panel rounded-2xl border border-slate-700 p-6 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2c1d11]/70 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-md bg-[#fdfbf7] rounded-3xl border-2 border-[#e6ccb2] p-6 shadow-2xl relative">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b-2 border-[#e6ccb2]">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-pink-400" />
-            <h3 className="text-base font-black text-white m-0 uppercase tracking-tight">
+            <Sparkles className="w-5 h-5 text-[#9c6644]" />
+            <h3 className="text-base font-black text-white text-stroke-black m-0 uppercase tracking-tight">
               EXPORT MASTER REMIX (.WAV)
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-xl text-[#7f5539] hover:text-[#4a2e1b] hover:bg-[#faf6f0] transition border border-[#e6ccb2]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4 mb-6">
-          <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-300 font-bold">
+          <div className="bg-white p-4 rounded-xl border-2 border-[#e6ccb2] space-y-2 text-xs shadow-sm">
+            <div className="flex justify-between text-[#4a2e1b] font-bold">
               <span>DECK A:</span>
-              <span className="text-cyan-400">{deckA.track ? deckA.track.title : 'Empty'}</span>
+              <span className="text-[#a66a38] font-black">{deckA.track ? deckA.track.title : 'Empty'}</span>
             </div>
-            <div className="flex justify-between text-slate-300 font-bold">
+            <div className="flex justify-between text-[#4a2e1b] font-bold">
               <span>DECK B:</span>
-              <span className="text-pink-400">{deckB.track ? deckB.track.title : 'Empty'}</span>
+              <span className="text-[#8c533e] font-black">{deckB.track ? deckB.track.title : 'Empty'}</span>
             </div>
-            <div className="flex justify-between text-slate-400 font-mono text-[11px] pt-2 border-t border-slate-800">
+            <div className="flex justify-between text-[#7f5539] font-mono text-[11px] font-bold pt-2 border-t-2 border-[#e6ccb2]">
               <span>FORMAT: WAV (16-bit 44.1kHz)</span>
-              <span>CROSSFADER: {mixer.crossfader.toFixed(2)}</span>
+              <span>BAL: {mixer.crossfader.toFixed(2)}</span>
             </div>
           </div>
 
@@ -77,7 +77,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, deckA
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 via-pink-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-pink-500/20 transition flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="w-full py-3.5 bg-gradient-to-r from-[#d4a373] via-[#b07d62] to-[#7f5539] hover:from-[#b08968] hover:to-[#582f0e] text-white font-black text-xs rounded-xl shadow-md border-2 border-[#4a2e1b] text-stroke-sm transition flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               {isExporting ? (
                 <>
@@ -93,15 +93,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, deckA
             </button>
           ) : (
             <div className="space-y-3 text-center">
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400" />
+              <div className="p-3 bg-[#eaf5ea] border-2 border-[#81c784] rounded-xl text-[#2d5a27] text-xs font-black flex items-center justify-center gap-2 shadow-sm">
+                <Check className="w-4 h-4 text-[#2d5a27]" />
                 <span>MASTER REMIX RENDER COMPLETE!</span>
               </div>
 
               <a
                 href={downloadUrl}
                 download={`HarmonicBlend_Remix_${Date.now()}.wav`}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 uppercase tracking-wider inline-block text-center"
+                className="w-full py-3.5 bg-[#2d5a27] hover:bg-[#1b3d17] text-white font-black text-xs rounded-xl shadow-md border-2 border-[#1b3d17] text-stroke-sm transition flex items-center justify-center gap-2 uppercase tracking-wider block text-center"
               >
                 <Download className="w-4 h-4 inline" />
                 <span>SAVE WAV FILE TO DISK</span>

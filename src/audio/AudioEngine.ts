@@ -616,6 +616,17 @@ class AudioEngine {
   }
 
   /**
+   * Set Master Volume (0.0 to 1.0)
+   */
+  public setMasterVolume(vol: number) {
+    this.mixer.masterVolume = Math.max(0, Math.min(1, vol));
+    if (this.masterGainNode && this.ctx) {
+      this.masterGainNode.gain.setValueAtTime(this.mixer.masterVolume, this.ctx.currentTime);
+    }
+    this.notify();
+  }
+
+  /**
    * Harmonize Deck B BPM and Key to match Deck A
    */
   public harmonizeDeckB() {
@@ -624,8 +635,10 @@ class AudioEngine {
     const rateA = this.deckA.playbackRate;
     const targetBpm = this.deckA.track.bpm * rateA;
 
-    const reqRate = targetBpm / this.deckB.track.bpm;
-    this.deckB.playbackRate = Math.max(0.5, Math.min(2.0, reqRate));
+    if (this.deckB.track.bpm > 0) {
+      const reqRate = targetBpm / this.deckB.track.bpm;
+      this.deckB.playbackRate = Math.max(0.5, Math.min(2.0, reqRate));
+    }
 
     let semitoneDiff = this.deckA.track.key.pitchClass - this.deckB.track.key.pitchClass;
     if (semitoneDiff > 6) semitoneDiff -= 12;

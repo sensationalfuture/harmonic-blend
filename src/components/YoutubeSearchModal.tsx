@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Tv, Upload, Disc, Music, Check, Loader2, Sparkles } from 'lucide-react';
-import { PRESET_TRACKS } from '../audio/PresetTracks';
+import { Search, X, Tv, Upload, Music, Check, Loader2, Sparkles } from 'lucide-react';
 import type { TrackMetaData, YoutubeResult } from '../types';
 import { audioEngine } from '../audio/AudioEngine';
 
@@ -19,7 +18,7 @@ export interface BackendYoutubeResult extends YoutubeResult {
 const FEATURED_RESULTS: BackendYoutubeResult[] = [];
 
 export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'youtube' | 'preset' | 'upload'>('youtube');
+  const [activeTab, setActiveTab] = useState<'youtube' | 'upload'>('youtube');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<BackendYoutubeResult[]>(FEATURED_RESULTS);
   const [isSearching, setIsSearching] = useState(false);
@@ -90,13 +89,6 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
     setIsSearching(false);
   };
 
-  const loadPresetToDeck = async (track: TrackMetaData, deckId: 'A' | 'B') => {
-    setLoadingDeck(`${deckId}-${track.id}`);
-    await audioEngine.loadTrack(deckId, track);
-    setLoadingDeck(null);
-    showSuccessMsg(`Loaded "${track.title}" onto Deck ${deckId}`);
-  };
-
   const loadYoutubeToDeck = async (yt: BackendYoutubeResult, deckId: 'A' | 'B') => {
     setLoadingDeck(`${deckId}-${yt.id}`);
 
@@ -164,23 +156,23 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl glass-panel rounded-2xl border border-slate-700 p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2c1d11]/70 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-2xl bg-[#fdfbf7] rounded-3xl border-2 border-[#e6ccb2] p-6 shadow-2xl relative">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Tv className="w-6 h-6 text-red-500" />
-            <h2 className="text-lg font-black text-white m-0 tracking-tight flex items-center gap-2">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b-2 border-[#e6ccb2]">
+          <div className="flex items-center gap-2.5">
+            <Tv className="w-6 h-6 text-[#9c6644]" />
+            <h2 className="text-xl font-black text-white text-stroke-black m-0 tracking-tight flex items-center gap-2">
               <span>YOUTUBE MUSIC SEARCH</span>
-              <span className="text-[10px] font-mono bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-red-400" />
-                POWERED BY YT-DLP & YTMUSICAPI
+              <span className="text-[10px] font-bold bg-[#f4ece1] text-[#7f5539] border border-[#d4a373] px-2 py-0.5 rounded-lg uppercase flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#9c6644]" />
+                YT-DLP & YTMUSIC
               </span>
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-xl text-[#7f5539] hover:text-[#4a2e1b] hover:bg-[#faf6f0] transition border border-[#e6ccb2]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -188,55 +180,43 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
 
         {/* Success Toast */}
         {loadedMsg && (
-          <div className="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-bold flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
+          <div className="mb-4 p-3 bg-[#eaf5ea] border-2 border-[#81c784] rounded-xl text-[#2d5a27] text-xs font-black flex items-center gap-2 shadow-sm">
+            <Check className="w-4 h-4 text-[#2d5a27]" />
             <span>{loadedMsg}</span>
           </div>
         )}
 
         {/* Download Status Toast */}
         {loadStatus && (
-          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-bold flex items-center gap-2 animate-pulse">
-            <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+          <div className="mb-4 p-3 bg-[#fff8e1] border-2 border-[#ffe082] rounded-xl text-[#8c533e] text-xs font-black flex items-center gap-2 animate-pulse shadow-sm">
+            <Loader2 className="w-4 h-4 text-[#d4a373] animate-spin" />
             <span>{loadStatus}</span>
           </div>
         )}
 
         {/* Ingestion Source Tabs */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-3 mb-4">
           <button
             onClick={() => setActiveTab('youtube')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition ${
+            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 border-2 transition ${
               activeTab === 'youtube'
-                ? 'bg-red-500/20 text-red-300 border-red-500/50'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                ? 'bg-[#d4a373] text-white border-[#7f5539] text-stroke-sm shadow-md'
+                : 'bg-white text-[#5c3d2e] border-[#e6ccb2] hover:bg-[#faf6f0]'
             }`}
           >
-            <Tv className="w-4 h-4 text-red-400" />
+            <Tv className="w-4 h-4" />
             YOUTUBE MUSIC SEARCH
           </button>
 
           <button
-            onClick={() => setActiveTab('preset')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition ${
-              activeTab === 'preset'
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
-            }`}
-          >
-            <Disc className="w-4 h-4 text-cyan-400" />
-            PRO PRESET STEMS
-          </button>
-
-          <button
             onClick={() => setActiveTab('upload')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition ${
+            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 border-2 transition ${
               activeTab === 'upload'
-                ? 'bg-pink-500/20 text-pink-300 border-pink-500/50'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                ? 'bg-[#b07d62] text-white border-[#582f0e] text-stroke-sm shadow-md'
+                : 'bg-white text-[#5c3d2e] border-[#e6ccb2] hover:bg-[#faf6f0]'
             }`}
           >
-            <Upload className="w-4 h-4 text-pink-400" />
+            <Upload className="w-4 h-4" />
             UPLOAD FILE
           </button>
         </div>
@@ -251,53 +231,61 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
                   placeholder="Search YouTube Music (e.g. highest in the room, Travis Scott, Drake)..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                  className="w-full bg-white border-2 border-[#e6ccb2] rounded-xl px-4 py-2.5 pl-10 text-xs text-[#2c1d11] font-bold placeholder-[#a08675] focus:outline-none focus:border-[#9c6644] shadow-sm"
                 />
-                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Search className="w-4 h-4 text-[#8c6d58] absolute left-3.5 top-3" />
               </div>
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-red-600/20 transition flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-[#7f5539] hover:bg-[#582f0e] text-white rounded-xl font-black text-xs shadow-md border-2 border-[#4a2e1b] text-stroke-sm transition flex items-center gap-1.5"
               >
-                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'YT MUSIC SEARCH'}
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SEARCH'}
               </button>
             </form>
 
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
               {results.length === 0 && !isSearching && (
                 <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
-                  <Search className="w-10 h-10 text-slate-700" />
+                  <Search className="w-10 h-10 text-[#d5bdaf]" />
                   <div>
-                    <p className="text-sm font-bold text-slate-400 m-0">Search YouTube Music</p>
-                    <p className="text-xs text-slate-600 mt-1">Type a song or artist above and press <span className="text-red-400 font-mono">YT MUSIC SEARCH</span></p>
-                    <p className="text-xs text-slate-700 mt-2">Powered by yt-dlp + ytmusicapi — real tracks, full quality</p>
+                    <p className="text-sm font-black text-[#5c3d2e] m-0">Search YouTube Music</p>
+                    <p className="text-xs text-[#8c6d58] mt-1 font-bold">Type a song or artist above and press <span className="text-[#9c6644] font-black">SEARCH</span></p>
+                    <p className="text-xs text-[#a08675] mt-2 font-semibold">Powered by yt-dlp + ytmusicapi — real tracks, full quality</p>
                   </div>
                 </div>
               )}
               {results.map((yt) => (
                 <div
                   key={yt.id}
-                  className="flex items-center justify-between p-3 bg-slate-900/60 hover:bg-slate-900 rounded-xl border border-slate-800 transition gap-4"
+                  className="flex items-center justify-between p-3 bg-white hover:bg-[#faf6f0] rounded-xl border-2 border-[#e6ccb2] transition gap-4 group shadow-sm"
                 >
-                  <img
-                    src={yt.thumbnailUrl}
-                    alt={yt.title}
-                    className="w-14 h-14 object-cover rounded-lg border border-slate-800 flex-shrink-0"
-                  />
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-[#e6ccb2] flex-shrink-0 shadow-sm">
+                    <img
+                      src={yt.thumbnailUrl}
+                      alt={yt.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-white truncate m-0 flex items-center gap-1.5">
+                    <h4 className="text-xs font-black text-white text-stroke-black truncate m-0 flex items-center gap-1.5">
                       <span>{yt.title}</span>
-                      <span className="px-1.5 py-0.5 bg-red-950 text-red-400 text-[9px] font-mono rounded uppercase border border-red-800">
-                        YT-DLP & YTMUSIC
+                      <span className="px-1.5 py-0.5 bg-[#f4ece1] text-[#7f5539] text-[9px] font-bold rounded uppercase border border-[#d5bdaf]">
+                        YT MUSIC
                       </span>
                     </h4>
-                    <p className="text-[11px] text-slate-400 m-0 mt-0.5">{yt.channelTitle} • {yt.duration}</p>
+                    <p className="text-[11px] text-[#5c3d2e] font-bold m-0 mt-1 flex items-center gap-2">
+                      <span>{yt.channelTitle}</span>
+                      <span>•</span>
+                      <span className="font-mono text-[#2c1d11] font-bold">{yt.duration}</span>
+                    </p>
                   </div>
+
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       disabled={loadingDeck === `A-${yt.id}`}
                       onClick={() => loadYoutubeToDeck(yt, 'A')}
-                      className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 border border-cyan-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                      className="px-3 py-2 bg-[#d4a373] hover:bg-[#b08968] text-white border-2 border-[#7f5539] rounded-xl text-xs font-black text-stroke-sm transition flex items-center gap-1 shadow-sm"
                     >
                       {loadingDeck === `A-${yt.id}` ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -309,7 +297,7 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
                     <button
                       disabled={loadingDeck === `B-${yt.id}`}
                       onClick={() => loadYoutubeToDeck(yt, 'B')}
-                      className="px-3 py-1.5 bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-slate-950 border border-pink-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                      className="px-3 py-2 bg-[#b07d62] hover:bg-[#8c533e] text-white border-2 border-[#582f0e] rounded-xl text-xs font-black text-stroke-sm transition flex items-center gap-1 shadow-sm"
                     >
                       {loadingDeck === `B-${yt.id}` ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -324,59 +312,19 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
           </div>
         )}
 
-        {/* Tab 2: Pro Presets */}
-        {activeTab === 'preset' && (
-          <div className="space-y-3 max-h-80 overflow-y-auto">
-            {PRESET_TRACKS.map((track) => (
-              <div
-                key={track.id}
-                className="flex items-center justify-between p-3 bg-slate-900/60 hover:bg-slate-900 rounded-xl border border-slate-800 transition gap-4"
-              >
-                <img
-                  src={track.thumbnailUrl}
-                  alt={track.title}
-                  className="w-14 h-14 object-cover rounded-lg border border-slate-800 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-bold text-white truncate m-0">{track.title}</h4>
-                  <p className="text-[11px] text-slate-400 m-0 mt-0.5">
-                    {track.artist} • {track.bpm} BPM • {track.key.camelot} ({track.key.keyName})
-                  </p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    disabled={loadingDeck === `A-${track.id}`}
-                    onClick={() => loadPresetToDeck(track, 'A')}
-                    className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 border border-cyan-500/40 rounded-lg text-xs font-bold transition"
-                  >
-                    + DECK A
-                  </button>
-                  <button
-                    disabled={loadingDeck === `B-${track.id}`}
-                    onClick={() => loadPresetToDeck(track, 'B')}
-                    className="px-3 py-1.5 bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-slate-950 border border-pink-500/40 rounded-lg text-xs font-bold transition"
-                  >
-                    + DECK B
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Tab 3: Custom File Upload */}
         {activeTab === 'upload' && (
-          <div className="p-8 border-2 border-dashed border-slate-700 rounded-2xl text-center bg-slate-900/40 flex flex-col items-center justify-center gap-4">
-            <Music className="w-10 h-10 text-slate-400 animate-bounce" />
+          <div className="p-8 border-2 border-dashed border-[#d5bdaf] rounded-2xl text-center bg-white/80 flex flex-col items-center justify-center gap-4">
+            <Music className="w-10 h-10 text-[#9c6644] animate-bounce" />
             <div>
-              <h4 className="text-sm font-bold text-white m-0">Upload Custom MP3 / WAV Audio File</h4>
-              <p className="text-xs text-slate-400 mt-1">
+              <h4 className="text-sm font-black text-[#ffffff] text-stroke-black m-0">Upload Custom MP3 / WAV Audio File</h4>
+              <p className="text-xs text-[#5c3d2e] font-bold mt-1">
                 Audio will be automatically processed by the Web Audio DSP Stem Separator & Key/BPM Detector.
               </p>
             </div>
 
             <div className="flex gap-4">
-              <label className="cursor-pointer px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-cyan-500/20 transition">
+              <label className="cursor-pointer px-4 py-2.5 bg-[#d4a373] hover:bg-[#b08968] text-white font-black rounded-xl text-xs shadow-md border-2 border-[#7f5539] text-stroke-sm transition">
                 <span>LOAD TO DECK A</span>
                 <input
                   type="file"
@@ -386,7 +334,7 @@ export const YoutubeSearchModal: React.FC<YoutubeSearchModalProps> = ({ isOpen, 
                 />
               </label>
 
-              <label className="cursor-pointer px-4 py-2 bg-pink-500 hover:bg-pink-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-pink-500/20 transition">
+              <label className="cursor-pointer px-4 py-2.5 bg-[#b07d62] hover:bg-[#8c533e] text-white font-black rounded-xl text-xs shadow-md border-2 border-[#582f0e] text-stroke-sm transition">
                 <span>LOAD TO DECK B</span>
                 <input
                   type="file"
