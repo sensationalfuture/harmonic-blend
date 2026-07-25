@@ -38,8 +38,23 @@ except ImportError:
     _demucs_available = False
     print("⚠️  Demucs not available — will use DSP fallback for stems")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# Serve React Frontend Static Files (when deployed in Docker container)
+@app.route('/')
+def serve_index():
+    if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        return app.send_static_file('index.html')
+    return jsonify({"status": "ok", "backend": "HarmonicBlend API server running"})
+
+@app.errorhandler(404)
+def not_found(e):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "API route not found"}), 404
+    if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        return app.send_static_file('index.html')
+    return jsonify({"error": "Not found"}), 404
 
 # Initialize YouTube Music API
 try:
@@ -492,6 +507,7 @@ def get_stem():
 
 
 if __name__ == '__main__':
-    print("Starting HarmonicBlend backend — yt-dlp + ytmusicapi + librosa + Demucs")
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting HarmonicBlend backend on port {port} — yt-dlp + ytmusicapi + librosa + Demucs")
     print(f"  librosa: ✅  |  Demucs: {'✅' if _demucs_available else '⚠️  (DSP fallback)'}")
-    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
